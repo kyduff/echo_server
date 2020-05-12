@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
         struct sockaddr_in client;
         socklen_t client_len = sizeof(client);
         int stream = accept(sock, (struct sockaddr *) &client, &client_len);
+        // int stream = connect(sock, (struct sockaddr *) &client, &client_len);
 
         int size;
 
@@ -105,22 +106,21 @@ int main(int argc, char *argv[]) {
         // send a welcome message
         if (send(stream, PROMPT, strlen(PROMPT), 0) == -1) {
             perror("send prompt");
+            close(stream);
         }
         
         /* ARGUMENTS: see "man 2 send"  */
 
-        /*
         // receive input
-        size = recv(??, ??, ??, ??);
-        
+        // TODO: Handle errors
+        size = recv(stream, &buf, BSIZE, 0);
 
         // null termination for strings
         buf[size] = '\0';          
         fprintf(stderr, "Text received: %s\n", buf);
 
         // echo input
-        send(??, ??, ??, ??);
-        */
+        send(stream, &buf, strlen(buf), 0);
 
         close(stream);
     
