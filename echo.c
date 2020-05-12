@@ -79,6 +79,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     };
 
+    // keep track of users
+    int user = -1;
     while (TRUE) {
 
     /* 4. Wait for client requests*/
@@ -102,6 +104,8 @@ int main(int argc, char *argv[]) {
             close(stream);
             exit(EXIT_FAILURE);
         }
+        user++;
+        fprintf(stderr, "User %d connected\n", user);
 
         // send a welcome message
         if (send(stream, PROMPT, strlen(PROMPT), 0) == -1) {
@@ -111,18 +115,36 @@ int main(int argc, char *argv[]) {
         
         /* ARGUMENTS: see "man 2 send"  */
 
-        // receive input
-        // TODO: Handle errors
-        size = recv(stream, &buf, BSIZE, 0);
+        // keep track of how many lines the user enters
+        int transmission_record = 1;
+        while (TRUE) {
 
-        // null termination for strings
-        buf[size] = '\0';          
-        fprintf(stderr, "Text received: %s\n", buf);
+            // receive input
+            // TODO: Handle errors
+            size = recv(stream, &buf, BSIZE, 0);
+            fprintf(stderr, "size received: %d\n", size);
 
-        // echo input
-        send(stream, &buf, strlen(buf), 0);
+            if (size == 0) {
+                fprintf(stderr, "User %d terminated connection\n", user);
+                close(stream);
+                break;
+            }
 
-        close(stream);
+            // null termination for strings
+            buf[size] = '\0';          
+            fprintf(stderr, "Text received: %s\n", buf);
+
+            // echo input
+            send(stream, &buf, strlen(buf), 0);
+
+            if (buf[size-1] == ENDLN) {
+                transmission_record++;
+                fprintf(stderr, "Log: transmission number %d with user %d successful\n",
+                        transmission_record, user);
+            }
+
+            // close(stream);
+        }
     
     }; /* while(TRUE) */
 
