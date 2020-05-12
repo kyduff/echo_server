@@ -88,7 +88,6 @@ int main(int argc, char *argv[]) {
         struct sockaddr_in client;
         socklen_t client_len = sizeof(client);
         int stream = accept(sock, (struct sockaddr *) &client, &client_len);
-        // int stream = connect(sock, (struct sockaddr *) &client, &client_len);
 
         int size;
 
@@ -109,7 +108,7 @@ int main(int argc, char *argv[]) {
 
         // send a welcome message
         if (send(stream, PROMPT, strlen(PROMPT), 0) == -1) {
-            perror("send prompt");
+            perror("prompt failed");
             close(stream);
         }
         
@@ -121,9 +120,14 @@ int main(int argc, char *argv[]) {
 
             // receive input
             // TODO: Handle errors
-            size = recv(stream, &buf, BSIZE, 0);
+            if ((size = recv(stream, &buf, BSIZE, 0)) < 0) {
+                perror("recv failed");
+                close(stream);
+                break;
+            }
             fprintf(stderr, "size received: %d\n", size);
 
+            // recv returns 0 iff user terminates connection (see man 2 recv)
             if (size == 0) {
                 fprintf(stderr, "User %d terminated connection\n", user);
                 close(stream);
@@ -135,15 +139,18 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Text received: %s\n", buf);
 
             // echo input
-            send(stream, &buf, strlen(buf), 0);
-
-            if (buf[size-1] == ENDLN) {
-                transmission_record++;
-                fprintf(stderr, "Log: transmission number %d with user %d successful\n",
-                        transmission_record, user);
+            if (send(stream, &buf, strlen(buf), 0) == -1) {
+                perror("echo failed");
+                close(stream);
+                break;
             }
 
-            // close(stream);
+            if (buf[size-1] == ENDLN) {
+                fprintf(stderr, "Log: transmission number %d with user %d successful\n",
+                        transmission_record, user);
+                transmission_record++;
+            }
+
         }
     
     }; /* while(TRUE) */
