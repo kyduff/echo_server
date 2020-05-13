@@ -32,6 +32,16 @@ int main(int argc, char *argv[]) {
     int sock;                   /* file descriptor for the server socket */
     struct sockaddr_in server;
 
+    int port;
+    if (argc == 2) {
+        port = atoi(argv[1]);
+    } else if (argc == 1) {
+        port = PORT;
+    } else {
+        perror("too many arguments");
+        exit(EXIT_FAILURE);
+    }
+
     char buf[BSIZE];
     
     /* 1. Create socket*/
@@ -58,8 +68,7 @@ int main(int argc, char *argv[]) {
     // listen on all interfaces
     server.sin_addr.s_addr = htonl(INADDR_ANY);  /* see "man 7 ip" */
     // To be made configurable
-    server.sin_port = htons(PORT);   
-
+    server.sin_port = htons(port);   
     if (bind(sock, (struct sockaddr *) &server, sizeof(server)) < 0) {
         perror("bind");
         exit(EXIT_FAILURE);
@@ -151,7 +160,7 @@ int main(int argc, char *argv[]) {
                 transmission_record++;
             }
 
-        }
+        }; /* end user connection */
     
     }; /* while(TRUE) */
 
