@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
     int sock;                   /* file descriptor for the server socket */
     struct sockaddr_in server;
 
+    // allow user to specify alternative ports
     int port;
     if (argc == 2) {
         port = atoi(argv[1]);
@@ -110,7 +111,7 @@ int main(int argc, char *argv[]) {
         if (stream < 0) {
             perror("accept failed");
             close(stream);
-            exit(EXIT_FAILURE);
+            continue;
         }
         user++;
         fprintf(stderr, "User %d connected\n", user);
@@ -119,6 +120,7 @@ int main(int argc, char *argv[]) {
         if (send(stream, PROMPT, strlen(PROMPT), 0) == -1) {
             perror("prompt failed");
             close(stream);
+            continue;
         }
         
         /* ARGUMENTS: see "man 2 send"  */
