@@ -125,10 +125,15 @@ int main(int argc, char *argv[]) {
         
         /* ARGUMENTS: see "man 2 send"  */
 
-        // keep track of how many lines the user enters
+        // count buffers of a single transmission
+        // will be used to identify when '.' is on it's own line
+        int buffer_count = 0;
+
+        // keep track of how many lines the user enters (no matter how long)
         int transmission_record = 1;
         while (TRUE) {
 
+            buffer_count++;
             // receive input
             // TODO: Handle errors
             if ((size = recv(stream, &buf, BSIZE, 0)) < 0) {
@@ -149,6 +154,13 @@ int main(int argc, char *argv[]) {
             buf[size] = '\0';          
             fprintf(stderr, "Text received: %s\n", buf);
 
+            // exit if QUIT sequence received as the first buffer
+            if ((strcmp(buf, QUIT) == 0) && (buffer_count == 1)) {
+                close(stream);
+                close(sock);
+                exit(EXIT_SUCCESS); 
+            }
+
             // echo input
             if (send(stream, &buf, strlen(buf), 0) == -1) {
                 perror("echo failed");
@@ -156,10 +168,13 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            if (buf[size-1] == ENDLN) {
+            // check if end of line
+            int final_buffer = (buf[size-1] == ENDLN);
+            if (final_buffer) {
                 fprintf(stderr, "Log: transmission number %d with user %d successful\n",
                         transmission_record, user);
                 transmission_record++;
+                buffer_count = 0; // reset buffer counter for next transmission
             }
 
         }; /* end user connection */
