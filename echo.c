@@ -154,8 +154,15 @@ int main(int argc, char *argv[]) {
             buf[size] = '\0';          
             fprintf(stderr, "Text received: %s\n", buf);
 
-            // exit if QUIT sequence received as the first buffer
-            if ((strcmp(buf, QUIT) == 0) && (buffer_count == 1)) {
+            // check if end of line
+            int final_buffer = (buf[size-1] == ENDLN);
+
+            // exit if quit sequence received as the first buffer
+            // for compatibility with netcat which supports piping (in case we
+            //   want to automate tests)
+            int wants_quit = ((strcmp(buf, QUIT) == 0) || (strcmp(buf, ".\n") == 0)) &&
+                             buffer_count == 1;
+            if (wants_quit) {
                 close(stream);
                 close(sock);
                 exit(EXIT_SUCCESS); 
@@ -168,8 +175,6 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            // check if end of line
-            int final_buffer = (buf[size-1] == ENDLN);
             if (final_buffer) {
                 fprintf(stderr, "Log: transmission number %d with user %d successful\n",
                         transmission_record, user);
